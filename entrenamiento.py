@@ -10,7 +10,7 @@ if len(imagenes_train) > 0:
 else:
     print("No hay imágenes de entrenamiento cargadas.")
 
-# Confirmar tamaño de las imágenes cargadas
+# Paraa confirmar tamaño de las imágenes cargadas
 if imagenes_train.size > 0:
     print(f"Dimensión de entrenamiento: {imagenes_train[0].shape}")
 if imagenes_test.size > 0:
