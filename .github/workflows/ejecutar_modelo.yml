@@ -22,7 +22,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requerimientos.txt
-          pip install papermill  # Necesario para ejecutar notebooks
+          pip install papermill  
 
       - name: Ejecutar modelo
         run: python modelo.py
