@@ -8,7 +8,8 @@ scikit-image
 fastapi
 uvicorn
 sqlalchemy
+papermill
+jupyter
 
 
-
-#!pip install tensorflow opencv-python numpy matplotlib scikit-learn seaborn scikit-image flask keras fastapi uvicorn sqlalchemy
+#!pip install tensorflow opencv-python numpy matplotlib scikit-learn seaborn scikit-image flask keras fastapi uvicorn sqlalchemy papermill
