@@ -31,7 +31,7 @@
       "metadata": {
         "id": "NZXcaZ1lSLi7"
       },
-      "execution_count": null,
+      "execution_count": None,
       "outputs": []
     },
     {
