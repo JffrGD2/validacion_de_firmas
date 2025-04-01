@@ -24,5 +24,6 @@ jobs:
           pip install -r requerimientos.txt
           pip install papermill  # Necesario para ejecutar notebooks
 
-      - name: Ejecutar el notebook
-        run: papermill modelo.ipynb modelo_salida.ipynb
+      - name: Ejecutar modelo
+        run: python modelo.py
+
