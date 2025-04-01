@@ -1,4 +1,4 @@
-name: Ejecutar modelo desde Colab
+name: Ejecutar Notebook de Colab
 
 on:
   push:
@@ -22,9 +22,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requerimientos.txt
-          pip install nbconvert
+          pip install papermill  
 
-      - name: Convertir y ejecutar el notebook
-        run: |
-          jupyter nbconvert --to script modelo.ipynb
-          python modelo.py
+      - name: Ejecutar modelo
+        run: python modelo.py
