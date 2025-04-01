@@ -1,27 +1,30 @@
-name: Ejecutar modelo de validación de firmas
+name: Ejecutar modelo desde Colab
 
-on:  
-  push:  
-    branches:  
-      - main  
-  workflow_dispatch:  
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-jobs:  
-  run-model:
-    runs-on: ubuntu-latest  
+jobs:
+  run-colab:
+    runs-on: ubuntu-latest
     steps:
-      - name: Clonar repositorio  
-        uses: actions/checkout@v4 
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
 
-      - name: Configurar Python  
-        uses: actions/setup-python@v4  
-        with:  
-          python-version: "3.11"  
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-      - name: Instalar dependencias  
-        run: |  
-          pip install --upgrade pip  
-          pip install -r requerimientos.txt  
+      - name: Instalar dependencias
+        run: |
+          pip install --upgrade pip
+          pip install -r requerimientos.txt
+          pip install nbconvert  # Necesario para convertir el notebook
 
-      - name: Ejecutar el modelo  
-        run: python modelo.py  
+      - name: Convertir y ejecutar el notebook
+        run: |
+          jupyter nbconvert --to script modelo.ipynb  
+          python modelo.py  
