@@ -87,7 +87,7 @@
         "id": "pY0XrkerJB61",
         "outputId": "a010dd56-6dbb-40fa-8c42-3fa297361cda"
       },
-      "execution_count": null,
+      "execution_count": None,
       "outputs": [
         {
           "output_type": "stream",
