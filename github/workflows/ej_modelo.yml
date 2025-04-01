@@ -22,9 +22,9 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requerimientos.txt
-          pip install nbconvert  # Necesario para convertir el notebook
+          pip install nbconvert
 
       - name: Convertir y ejecutar el notebook
         run: |
-          jupyter nbconvert --to script modelo.ipynb  
-          python modelo.py  
+          jupyter nbconvert --to script modelo.ipynb
+          python modelo.py
