@@ -60,7 +60,7 @@
         "id": "8vIu0PyaTdRo",
         "outputId": "3291804b-a9f3-4dba-8bfc-08bbcbb52b9c"
       },
-      "execution_count": null,
+      "execution_count": None,
       "outputs": [
         {
           "output_type": "stream",
