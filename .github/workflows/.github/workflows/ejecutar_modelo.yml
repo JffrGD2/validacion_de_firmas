@@ -1,4 +1,4 @@
-name: Ejecutar modelo
+name: Ejecutar Notebook de Colab
 
 on:
   push:
@@ -7,9 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-model:
+  run-colab:
     runs-on: ubuntu-latest
-
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
@@ -21,8 +20,9 @@ jobs:
 
       - name: Instalar dependencias
         run: |
+          pip install --upgrade pip
           pip install -r requerimientos.txt
+          pip install papermill  
 
       - name: Ejecutar modelo
-        run: |
-          python modelo.py
+        run: python modelo.py
