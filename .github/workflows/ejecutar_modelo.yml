@@ -1,0 +1,28 @@
+name: Ejecutar Notebook de Colab
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  run-colab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: |
+          pip install --upgrade pip
+          pip install -r requerimientos.txt
+          pip install papermill  # Necesario para ejecutar notebooks
+
+      - name: Ejecutar el notebook
+        run: papermill modelo.ipynb modelo_salida.ipynb
