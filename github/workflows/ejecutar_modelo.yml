@@ -1,4 +1,4 @@
-name: Ejecutar Modelo
+name: Ejecutar Modelo de Firmas
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  run-model:
+  ejecutar-modelo:
     runs-on: ubuntu-latest
     steps:
       - name: Clonar el repositorio
@@ -21,10 +21,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Ejecutar el modelo
-        run: python modelo.py | tee resultado.txt
-
-      - name: Subir logs de ejecución
-        uses: actions/upload-artifact@v3
-        with:
-          name: resultado-ejecucion
-          path: resultado.txt
+        run: python modelo.py
