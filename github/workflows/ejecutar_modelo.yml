@@ -21,4 +21,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Ejecutar el modelo
-        run: python modelo.py
+        run: python modelo.py | tee output.log
