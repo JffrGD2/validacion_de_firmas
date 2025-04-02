@@ -1,28 +1,30 @@
-name: Ejecutar Notebook de Colab
+name: Ejecutar Modelo
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  run-colab:
+  run-model:
     runs-on: ubuntu-latest
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
+      - name: Clonar el repositorio
+        uses: actions/checkout@v3
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v3
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
       - name: Instalar dependencias
-        run: |
-          pip install --upgrade pip
-          pip install -r requerimientos.txt
-          pip install papermill  
+        run: pip install -r requirements.txt
 
-      - name: Ejecutar modelo
-        run: python modelo.py
+      - name: Ejecutar el modelo
+        run: python modelo.py | tee resultado.txt
+
+      - name: Subir logs de ejecución
+        uses: actions/upload-artifact@v3
+        with:
+          name: resultado-ejecucion
+          path: resultado.txt
