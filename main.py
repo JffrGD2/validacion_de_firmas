@@ -16,7 +16,7 @@ app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 #Clases para el modelo de firmas
-PREDIC_FIRMAS = ['Firma válida', 'Firma Falsa']
+PREDIC_FIRMAS = ['López correcta', 'Falsificada', 'Lara correcta', 'Falsificada', 'Coronado Correcta', 'Falsificada', 'de León correcta', 'Falsificada', 'Infante Correcta', 'Falsificada']
 
 #Cargar el modelo de imágenes
 modelo = tf.lite.Interpreter(model_path="modelfirm.tflite")
@@ -38,15 +38,16 @@ async def predict_image(archivo: UploadFile = File(...)):
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
         modelo.set_tensor(entrada[0]['index'], img_arr)
         modelo.invoke()
-        salida = modelo.get_tensor(salida[0]['index'])
-        prediccion = np.argmax(salida)
-        confianza = salida[prediccion]
+        resultado = modelo.get_tensor(salida[0]['index'])
+        logger.info(f"Resultado: {resultado}")
+        logger.info(f"Shape: {resultado.shape}")
+        prediccion = np.argmax(resultado[0])
+        confianza = resultado[0][prediccion]
         return {"Predicción": PREDIC_FIRMAS[prediccion], "confianza": float(confianza)}
     except Exception as e:
         logger.error(f"Error al procesar imagen: {e}")
         raise HTTPException(status_code=500, detail="Error interno en predicción de imagen")
-    finally:
-        img.close()
+
 
 
 @app.get("/")
