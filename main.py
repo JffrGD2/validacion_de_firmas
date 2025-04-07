@@ -1,13 +1,11 @@
 from fastapi import FastAPI, HTTPException, File, UploadFile
 import logging
 from fastapi.middleware.gzip import GZipMiddleware
-import sqlite3
 import tensorflow as tf
 import numpy as np
 from io import BytesIO
 from PIL import Image
 import psycopg2
-from psycopg2 import Error
 
 
 # Configuración de logs
