@@ -162,3 +162,139 @@ def obtener_todas_plantillas():
     finally:
         cur.close()
         con.close()
+
+# Documentos
+@app.post("/ingresar_doc")
+def ingresar_doc(firma, ruta_doc, estado):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("INSERT INTO documentos (nap_2, ruta_documento, estado) VALUES (%s, %s, %s) RETURNING documento;",
+                    (firma, ruta_doc, estado))
+        doc = cur.fetchone()[0]
+        con.commit()
+        return {"mensaje": "Documento ingresado", "documento": doc}
+    except:
+        raise HTTPException(status_code=500, detail="Error al ingresar documento")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/doc_usuario/{usu}")
+def obtener_doc_usuario(usu):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT d.documento, d.nap_2, d.ruta_documento, d.fecha_creacion, d.estado FROM documentos d JOIN firmas f ON d.nap_2 = f.nap_2 WHERE f.enrac_1 = %s;", (usu,))
+        docs = [{"documento": row[0], "firma": row[1], "ruta": row[2], "fecha": row[3], "estado": row[4]} for row in cur.fetchall()]
+        return docs
+    except:
+        raise HTTPException(status_code=500, detail="Error al buscar documentos")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/docs_todos")
+def obtener_todos_docs():
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT documento, nap_2, ruta_documento, fecha_creacion, estado FROM documentos;")
+        docs = [{"documento": row[0], "firma": row[1], "ruta": row[2], "fecha": row[3], "estado": row[4]} for row in cur.fetchall()]
+        return docs
+    except:
+        raise HTTPException(status_code=500, detail="Error al listar documentos")
+    finally:
+        cur.close()
+        con.close()
+
+# Firmas
+@app.post("/registrar_firma")
+def registrar_firma(usu, plantilla, imagen, pdf_firmado):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("INSERT INTO firmas (enrac_1, yam_66, imagen_firma, ruta_pdf_firmado) VALUES (%s, %s, %s, %s) RETURNING nap_2;",
+                    (usu, plantilla, imagen, pdf_firmado))
+        firma = cur.fetchone()[0]
+        con.commit()
+        return {"mensaje": "Firma registrada", "firma": firma}
+    except:
+        raise HTTPException(status_code=500, detail="Error al registrar firma")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/firma_usuario/{usu}")
+def obtener_firma_usuario(usu):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT nap_2, enrac_1, yam_66, imagen_firma, ruta_pdf_firmado, fecha_registro FROM firmas WHERE enrac_1 = %s;", (usu,))
+        firmas = [{"firma": row[0], "usu": row[1], "plantilla": row[2], "imagen": row[3], "pdf": row[4], "fecha": row[5]} for row in cur.fetchall()]
+        return firmas
+    except:
+        raise HTTPException(status_code=500, detail="Error al buscar firmas")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/firmas_todas")
+def obtener_todas_firmas():
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT nap_2, enrac_1, yam_66, imagen_firma, ruta_pdf_firmado, fecha_registro FROM firmas;")
+        firmas = [{"firma": row[0], "usu": row[1], "plantilla": row[2], "imagen": row[3], "pdf": row[4], "fecha": row[5]} for row in cur.fetchall()]
+        return firmas
+    except:
+        raise HTTPException(status_code=500, detail="Error al listar firmas")
+    finally:
+        cur.close()
+        con.close()
+
+# Intentos sospechosos
+@app.post("/intento_sospechoso")
+def registrar_intento(usu, confianza):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("INSERT INTO intento_sospechoso (enrac_1, confianza) VALUES (%s, %s) RETURNING fraude;",
+                    (usu, confianza))
+        intento = cur.fetchone()[0]
+        con.commit()
+        return {"mensaje": "Intento registrado", "intento": intento}
+    except:
+        raise HTTPException(status_code=500, detail="Error al registrar intento")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/intentos_usuario/{usu}")
+def consultar_intentos_usuario(usu):
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT fraude, enrac_1, confianza, fecha_deteccion FROM intento_sospechoso WHERE enrac_1 = %s;", (usu,))
+        intentos = [{"intento": row[0], "usu": row[1], "confianza": row[2], "fecha": row[3]} for row in cur.fetchall()]
+        return intentos
+    except:
+        raise HTTPException(status_code=500, detail="Error al buscar intentos")
+    finally:
+        cur.close()
+        con.close()
+
+@app.get("/intentos_todos")
+def consultar_todos_intentos():
+    try:
+        con = conexion()
+        cur = con.cursor()
+        cur.execute("SELECT fraude, enrac_1, confianza, fecha_deteccion FROM intento_sospechoso;")
+        intentos = [{"intento": row[0], "usu": row[1], "confianza": row[2], "fecha": row[3]} for row in cur.fetchall()]
+        return intentos
+    except:
+        raise HTTPException(status_code=500, detail="Error al listar intentos")
+    finally:
+        cur.close()
+        con.close()
+
