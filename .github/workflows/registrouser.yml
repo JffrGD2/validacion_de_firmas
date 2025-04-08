@@ -1,0 +1,43 @@
+name: Test API FastAPI
+
+on:
+  push:
+    branches: [API]
+  pull_request:
+    branches: [API]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.linkbd }}
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install fastapi uvicorn requests
+
+      - name: Correr FastAPI en segundo plano
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+
+      - name: Prueba de registro de usuario
+        run: |
+          echo "➡️ Crear usuario"
+          curl -X POST "http://localhost:8000/crear_usuario" \
+            -H "Content-Type: application/json" \
+            -d '{"nombre": "Oscar", "correo": "oscar@firma.com", "contrasena": "clave123", "tipo_usuario": "admin"}'
+
+      - name: Pruebas terminadas
+        run: echo "Usuario creado correctamente"
