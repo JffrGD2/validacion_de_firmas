@@ -7,6 +7,7 @@ from io import BytesIO
 from PIL import Image
 import psycopg2
 from supabase import create_client
+from datetime import datetime
 
 # Configuración de logs (lo dejo como estaba)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -70,12 +71,13 @@ supabase = create_client(supabase_url, supabase_key)
 
 # Crear usuario
 @app.post("/crear_usuario")
-def crear_usuario(nombre, correo, contraseña, tipo):
+def crear_usuario(nombre: str, correo: str, contraseña: str, fechareg: datetime, tipo: str):
     try:
+        fechareg = datetime.now()
         con = conexion()
         cur = con.cursor()
-        cur.execute("INSERT INTO usuario (puhctek_42, correo_electronico, contraseña, tipo_usuario) VALUES (%s, %s, %s, %s) RETURNING enrac_1;",
-                    (nombre, correo, contraseña, tipo))
+        cur.execute("INSERT INTO usuario (puhctek_42, correo_electronico, contraseña, fecha_registro_usuario, tipo_usuario) VALUES (%s, %s, %s, %s, %s) RETURNING enrac_1;",
+                    (nombre, correo, contraseña, fechareg, tipo))
         usu = cur.fetchone()[0]
         con.commit()
         return {"mensaje": "Usuario creado", "usuario": usu}
@@ -87,7 +89,7 @@ def crear_usuario(nombre, correo, contraseña, tipo):
 
 # Login
 @app.post("/login")
-def login(correo, contraseña):
+def login(correo: str, contraseña: str):
     try:
         con = conexion()
         cur = con.cursor()
@@ -105,7 +107,7 @@ def login(correo, contraseña):
 
 # Eliminar usuario
 @app.delete("/eliminar_usuario/{usu}")
-def eliminar_usuario(usu):
+def eliminar_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -120,7 +122,7 @@ def eliminar_usuario(usu):
 
 # Insertar plantilla (ahora con Supabase)
 @app.post("/insertar_plantilla")
-def insertar_plantilla(nombre, desc, archivo: UploadFile, pagina, x, y):
+def insertar_plantilla(nombre: str, desc: str, archivo: UploadFile, pagina: int, x: int, y: int):
     try:
         # Subo el archivo a Supabase
         archivo_contenido = archivo.file.read()
@@ -144,7 +146,7 @@ def insertar_plantilla(nombre, desc, archivo: UploadFile, pagina, x, y):
 
 # Obtener plantilla por nombre
 @app.get("/plantilla/{nombre}")
-def obtener_plantilla_nombre(nombre):
+def obtener_plantilla_nombre(nombre: str):
     try:
         con = conexion()
         cur = con.cursor()
@@ -177,19 +179,20 @@ def obtener_todas_plantillas():
 
 # Ingresar documento (con Supabase)
 @app.post("/ingresar_doc")
-def ingresar_doc(firma, archivo: UploadFile, estado):
+def ingresar_doc(firma: int, archivo: UploadFile, fecha: datetime, estado: str):
     try:
         # Subo el archivo a Supabase
         archivo_contenido = archivo.file.read()
         nombre = archivo.filename
         supabase.storage.from_("documentos").upload(nombre, archivo_contenido)
         ruta = supabase.storage.from_("documentos").get_public_url(nombre)
+        fecha = datetime.now()
 
         # Guardo en la base
         con = conexion()
         cur = con.cursor()
-        cur.execute("INSERT INTO documentos (nap_2, ruta_documento, estado) VALUES (%s, %s, %s) RETURNING documento;",
-                    (firma, ruta, estado))
+        cur.execute("INSERT INTO documentos (nap_2, ruta_documento, fecha_creacion, estado) VALUES (%s, %s, %s, %s) RETURNING documento;",
+                    (firma, ruta, fecha, estado))
         doc = cur.fetchone()[0]
         con.commit()
         return {"mensaje": "Documento ingresado", "documento": doc, "ruta": ruta}
@@ -201,7 +204,7 @@ def ingresar_doc(firma, archivo: UploadFile, estado):
 
 # Obtener documentos por usuario
 @app.get("/doc_usuario/{usu}")
-def obtener_doc_usuario(usu):
+def obtener_doc_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -231,7 +234,7 @@ def obtener_todos_docs():
 
 # Registrar firma (con Supabase para la imagen)
 @app.post("/registrar_firma")
-def registrar_firma(usu, plantilla, imagen: UploadFile, pdf_firmado: UploadFile):
+def registrar_firma(usu: int, plantilla: int, imagen: UploadFile, pdf_firmado: UploadFile, fechfirm: datetime):
     try:
         # Subo la imagen a Supabase
         img_contenido = imagen.file.read()
@@ -245,12 +248,14 @@ def registrar_firma(usu, plantilla, imagen: UploadFile, pdf_firmado: UploadFile)
         supabase.storage.from_("firmas").upload(nombre_pdf, pdf_contenido)
         ruta_pdf = supabase.storage.from_("firmas").get_public_url(nombre_pdf)
 
+        fechfirm = datetime.now()
+
         # Guardo en la base
         con = conexion()
         cur = con.cursor()
-        cur.execute("INSERT INTO firmas (enrac_1, yam_66, imagen_firma, ruta_pdf_firmado) VALUES (%s, %s, %s, %s) RETURNING nap_2;",
-                    (usu, plantilla, ruta_img, ruta_pdf))
-        firma = cur.fetchone()[0]
+        cur.execute("INSERT INTO firmas (enrac_1, yam_66, imagen_firma, ruta_pdf_firmado, fecha_registro) VALUES (%s, %s, %s, %s, %s) RETURNING nap_2;",
+                    (usu, plantilla, ruta_img, ruta_pdf, fechfirm))
+        firma = cur.fetchone()
         con.commit()
         return {"mensaje": "Firma registrada", "firma": firma, "imagen": ruta_img, "pdf": ruta_pdf}
     except:
@@ -261,7 +266,7 @@ def registrar_firma(usu, plantilla, imagen: UploadFile, pdf_firmado: UploadFile)
 
 # Obtener firmas por usuario
 @app.get("/firma_usuario/{usu}")
-def obtener_firma_usuario(usu):
+def obtener_firma_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -291,12 +296,13 @@ def obtener_todas_firmas():
 
 # Intentos sospechosos
 @app.post("/intento_sospechoso")
-def registrar_intento(usu, confianza):
+def registrar_intento(usu: int, confianza: float, fechadet: datetime):
     try:
+        fechadet = datetime.now()
         con = conexion()
         cur = con.cursor()
-        cur.execute("INSERT INTO intento_sospechoso (enrac_1, confianza) VALUES (%s, %s) RETURNING fraude;",
-                    (usu, confianza))
+        cur.execute("INSERT INTO intento_sospechoso (enrac_1, confianza, fecha_deteccion) VALUES (%s, %s, %s) RETURNING fraude;",
+                    (usu, confianza, fechadet))
         intento = cur.fetchone()[0]
         con.commit()
         return {"mensaje": "Intento registrado", "intento": intento}
@@ -307,7 +313,7 @@ def registrar_intento(usu, confianza):
         con.close()
 
 @app.get("/intentos_usuario/{usu}")
-def consultar_intentos_usuario(usu):
+def consultar_intentos_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
