@@ -52,7 +52,7 @@ async def predict_image(archivo: UploadFile = File(...)):
         logger.error(f"Error al procesar imagen: {e}")
         raise HTTPException(status_code=500, detail="Error interno en predicción de imagen")
 
-# Conexión a Clever Cloud
+# Clever Cloud
 def conexion():
     return psycopg2.connect(
         host='bmitq7veu7zaz6phfgs2-postgresql.services.clever-cloud.com', 
