@@ -3,3 +3,5 @@ uvicorn==0.32.1
 tensorflow==2.15.0
 numpy==1.26.4
 Pillow==9.5.0
+psycopg2==2.9.10 
+supabase==1.0.3

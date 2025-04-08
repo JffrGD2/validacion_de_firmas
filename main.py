@@ -9,30 +9,28 @@ import psycopg2
 from supabase import create_client
 from datetime import datetime
 
-# Configuración de logs (lo dejo como estaba)
+# Configuración de logs 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Inicializo la API
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Mensaje de inicio
 @app.get("/")
 def inicio():
     return {"mensaje": "Bienvenido a la API de ReFirm"}
 
-# Clases para el modelo de firmas (sin cambios)
+# Clases para el modelo de firmas
 PREDIC_FIRMAS = ['López correcta', 'Falsificada', 'Lara correcta', 'Falsificada', 'Coronado Correcta', 'Falsificada', 'Torres correcta', 'Falsificada', 'Infante Correcta', 'Falsificada']
 
-# Cargo el modelo de imágenes (sin cambios)
+# Cargo el modelo de imágenes 
 modelo = tf.lite.Interpreter(model_path="modelfirm.tflite")
 modelo.allocate_tensors()
 entrada = modelo.get_input_details()
 salida = modelo.get_output_details()
 forma = entrada[0]['shape']
 
-# Subir y predecir imagen (sin cambios)
+# Subir y predecir imagen 
 @app.post("/predict/image/")
 async def predict_image(archivo: UploadFile = File(...)):
     if not archivo.filename.lower().endswith(("jpg", "jpeg", "png")):
