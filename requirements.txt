@@ -5,3 +5,4 @@ numpy==1.26.4
 Pillow==9.5.0
 psycopg2==2.9.10 
 supabase==1.0.3
+python-multipart==0.0.9 
