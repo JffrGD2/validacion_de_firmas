@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, File, UploadFile, Query
 import logging
 from fastapi.middleware.gzip import GZipMiddleware
 import tensorflow as tf
@@ -6,34 +6,33 @@ import numpy as np
 from io import BytesIO
 from PIL import Image
 import psycopg2
-from supabase import create_client
 
-# Configuración de logs (lo dejo como estaba)
+
+# Configuración de logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Inicializo la API
+#Inicialización de la API
 app = FastAPI()
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Mensaje de inicio
 @app.get("/")
 def inicio():
     return {"mensaje": "Bienvenido a la API de ReFirm"}
 
-# Clases para el modelo de firmas (sin cambios)
+#Clases para el modelo de firmas
 PREDIC_FIRMAS = ['López correcta', 'Falsificada', 'Lara correcta', 'Falsificada', 'Coronado Correcta', 'Falsificada', 'Torres correcta', 'Falsificada', 'Infante Correcta', 'Falsificada']
 
-# Cargo el modelo de imágenes (sin cambios)
+#Cargar el modelo de imágenes
 modelo = tf.lite.Interpreter(model_path="modelfirm.tflite")
 modelo.allocate_tensors()
 entrada = modelo.get_input_details()
 salida = modelo.get_output_details()
 forma = entrada[0]['shape']
 
-# Subir y predecir imagen (sin cambios)
+#Petición para subir imagen
 @app.post("/predict/image/")
-async def predict_image(archivo: UploadFile = File(...)):
+async def predict_image(archivo: UploadFile = File(...), usu: int = Query(...)):
     if not archivo.filename.lower().endswith(("jpg", "jpeg", "png")):
         raise HTTPException(status_code=400, detail="El archivo debe ser una imagen en formato JPG o PNG")
     try:
@@ -45,32 +44,36 @@ async def predict_image(archivo: UploadFile = File(...)):
         modelo.set_tensor(entrada[0]['index'], img_arr)
         modelo.invoke()
         resultado = modelo.get_tensor(salida[0]['index'])
+        logger.info(f"Resultado: {resultado}")
+        logger.info(f"Shape: {resultado.shape}")
         prediccion = np.argmax(resultado[0])
         confianza = resultado[0][prediccion]
-        return {"Predicción": PREDIC_FIRMAS[prediccion], "confianza": float(confianza)}
+        etiqueta = PREDIC_FIRMAS[prediccion]
+        if "falsificada" in etiqueta.lower():
+            con = conexion()
+            cur = con.cursor()
+            cur.execute("INSERT INTO intento_sospechoso (enrac_1, confianza) VALUES (%s, %s) RETURNING fraude;",
+                    (usu, confianza))
+            con.commit()
+            con.close()
+        return {"Predicción": etiqueta, "confianza": float(confianza)}
     except Exception as e:
         logger.error(f"Error al procesar imagen: {e}")
         raise HTTPException(status_code=500, detail="Error interno en predicción de imagen")
 
-# Conexión a Clever Cloud
+#Conexion con la base de datos
 def conexion():
     return psycopg2.connect(
-        host='bmitq7veu7zaz6phfgs2-postgresql.services.clever-cloud.com', 
-        port='50013', 
-        dbname='bmitq7veu7zaz6phfgs2', 
-        user='u8jgl5ydg8hrcjko06ue', 
-        password='NFiQcSh7A9JohM2unEe7tD4kbOTJUo', 
-        sslmode='require'
-    )
-
-# Conexión a Supabase pa archivos
-supabase_url = "https://bokoemdaxeqfwfbbcnbv.supabase.co"
-supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJva29lbWRheGVxZndmYmJjbmJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwODE5NTMsImV4cCI6MjA1OTY1Nzk1M30.x9FLumJjjNrGBg4nacVdHO24ElGnRBzN-axl9MGHl9s"  
-supabase = create_client(supabase_url, supabase_key)
+    host='bmitq7veu7zaz6phfgs2-postgresql.services.clever-cloud.com', 
+    port='50013', 
+    dbname='bmitq7veu7zaz6phfgs2', 
+    user='u8jgl5ydg8hrcjko06ue', 
+    password='NFiQcSh7A9JohM2unEe7tD4kbOTJUo', 
+    sslmode='require')
 
 # Crear usuario
 @app.post("/crear_usuario")
-def crear_usuario(nombre, correo, contraseña, tipo):
+def crear_usuario(nombre: str, correo: str, contraseña: str, tipo: str):
     try:
         con = conexion()
         cur = con.cursor()
@@ -87,7 +90,7 @@ def crear_usuario(nombre, correo, contraseña, tipo):
 
 # Login
 @app.post("/login")
-def login(correo, contraseña):
+def login(correo: str, contraseña: str):
     try:
         con = conexion()
         cur = con.cursor()
@@ -105,7 +108,7 @@ def login(correo, contraseña):
 
 # Eliminar usuario
 @app.delete("/eliminar_usuario/{usu}")
-def eliminar_usuario(usu):
+def eliminar_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -118,33 +121,25 @@ def eliminar_usuario(usu):
         cur.close()
         con.close()
 
-# Insertar plantilla (ahora con Supabase)
+# Plantillas documentos
 @app.post("/insertar_plantilla")
-def insertar_plantilla(nombre, desc, archivo: UploadFile, pagina, x, y):
+def insertar_plantilla(nombre: str, desc: str, ruta: str, pagina: str, x: int,   y: int):
     try:
-        # Subo el archivo a Supabase
-        archivo_contenido = archivo.file.read()
-        nombre_archivo = archivo.filename
-        supabase.storage.from_("plantillas").upload(nombre_archivo, archivo_contenido)
-        ruta = supabase.storage.from_("plantillas").get_public_url(nombre_archivo)
-
-        # Guardo en la base
         con = conexion()
         cur = con.cursor()
         cur.execute("INSERT INTO plantillas_documento (puhctek_42, descripcion, ruta_archivo, pagina_firma, coord_x, coord_y) VALUES (%s, %s, %s, %s, %s, %s) RETURNING nap_2;",
                     (nombre, desc, ruta, pagina, x, y))
         plantilla = cur.fetchone()[0]
         con.commit()
-        return {"mensaje": "Plantilla guardada", "plantilla": plantilla, "ruta": ruta}
+        return {"mensaje": "Plantilla guardada", "plantilla": plantilla}
     except:
         raise HTTPException(status_code=500, detail="Error al guardar plantilla")
     finally:
         cur.close()
         con.close()
 
-# Obtener plantilla por nombre
 @app.get("/plantilla/{nombre}")
-def obtener_plantilla_nombre(nombre):
+def obtener_plantilla_nombre(nombre: str):
     try:
         con = conexion()
         cur = con.cursor()
@@ -160,7 +155,6 @@ def obtener_plantilla_nombre(nombre):
         cur.close()
         con.close()
 
-# Listar todas las plantillas
 @app.get("/plantillas_todas")
 def obtener_todas_plantillas():
     try:
@@ -175,33 +169,25 @@ def obtener_todas_plantillas():
         cur.close()
         con.close()
 
-# Ingresar documento (con Supabase)
+# Documentos
 @app.post("/ingresar_doc")
-def ingresar_doc(firma, archivo: UploadFile, estado):
+def ingresar_doc(firma: str, ruta_doc: str, estado: str):
     try:
-        # Subo el archivo a Supabase
-        archivo_contenido = archivo.file.read()
-        nombre = archivo.filename
-        supabase.storage.from_("documentos").upload(nombre, archivo_contenido)
-        ruta = supabase.storage.from_("documentos").get_public_url(nombre)
-
-        # Guardo en la base
         con = conexion()
         cur = con.cursor()
         cur.execute("INSERT INTO documentos (nap_2, ruta_documento, estado) VALUES (%s, %s, %s) RETURNING documento;",
-                    (firma, ruta, estado))
+                    (firma, ruta_doc, estado))
         doc = cur.fetchone()[0]
         con.commit()
-        return {"mensaje": "Documento ingresado", "documento": doc, "ruta": ruta}
+        return {"mensaje": "Documento ingresado", "documento": doc}
     except:
         raise HTTPException(status_code=500, detail="Error al ingresar documento")
     finally:
         cur.close()
         con.close()
 
-# Obtener documentos por usuario
 @app.get("/doc_usuario/{usu}")
-def obtener_doc_usuario(usu):
+def obtener_doc_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -214,7 +200,6 @@ def obtener_doc_usuario(usu):
         cur.close()
         con.close()
 
-# Listar todos los documentos
 @app.get("/docs_todos")
 def obtener_todos_docs():
     try:
@@ -229,39 +214,25 @@ def obtener_todos_docs():
         cur.close()
         con.close()
 
-# Registrar firma (con Supabase para la imagen)
+# Firmas
 @app.post("/registrar_firma")
-def registrar_firma(usu, plantilla, imagen: UploadFile, pdf_firmado: UploadFile):
+def registrar_firma(usu: int, plantilla: str, imagen: str, pdf_firmado: str):
     try:
-        # Subo la imagen a Supabase
-        img_contenido = imagen.file.read()
-        nombre_img = imagen.filename
-        supabase.storage.from_("firmas").upload(nombre_img, img_contenido)
-        ruta_img = supabase.storage.from_("firmas").get_public_url(nombre_img)
-
-        # Subo el PDF a Supabase
-        pdf_contenido = pdf_firmado.file.read()
-        nombre_pdf = pdf_firmado.filename
-        supabase.storage.from_("firmas").upload(nombre_pdf, pdf_contenido)
-        ruta_pdf = supabase.storage.from_("firmas").get_public_url(nombre_pdf)
-
-        # Guardo en la base
         con = conexion()
         cur = con.cursor()
         cur.execute("INSERT INTO firmas (enrac_1, yam_66, imagen_firma, ruta_pdf_firmado) VALUES (%s, %s, %s, %s) RETURNING nap_2;",
-                    (usu, plantilla, ruta_img, ruta_pdf))
+                    (usu, plantilla, imagen, pdf_firmado))
         firma = cur.fetchone()[0]
         con.commit()
-        return {"mensaje": "Firma registrada", "firma": firma, "imagen": ruta_img, "pdf": ruta_pdf}
+        return {"mensaje": "Firma registrada", "firma": firma}
     except:
         raise HTTPException(status_code=500, detail="Error al registrar firma")
     finally:
         cur.close()
         con.close()
 
-# Obtener firmas por usuario
 @app.get("/firma_usuario/{usu}")
-def obtener_firma_usuario(usu):
+def obtener_firma_usuario(usu: int):
     try:
         con = conexion()
         cur = con.cursor()
@@ -274,7 +245,6 @@ def obtener_firma_usuario(usu):
         cur.close()
         con.close()
 
-# Listar todas las firmas
 @app.get("/firmas_todas")
 def obtener_todas_firmas():
     try:
@@ -285,23 +255,6 @@ def obtener_todas_firmas():
         return firmas
     except:
         raise HTTPException(status_code=500, detail="Error al listar firmas")
-    finally:
-        cur.close()
-        con.close()
-
-# Intentos sospechosos
-@app.post("/intento_sospechoso")
-def registrar_intento(usu, confianza):
-    try:
-        con = conexion()
-        cur = con.cursor()
-        cur.execute("INSERT INTO intento_sospechoso (enrac_1, confianza) VALUES (%s, %s) RETURNING fraude;",
-                    (usu, confianza))
-        intento = cur.fetchone()[0]
-        con.commit()
-        return {"mensaje": "Intento registrado", "intento": intento}
-    except:
-        raise HTTPException(status_code=500, detail="Error al registrar intento")
     finally:
         cur.close()
         con.close()
@@ -333,3 +286,4 @@ def consultar_todos_intentos():
     finally:
         cur.close()
         con.close()
+
