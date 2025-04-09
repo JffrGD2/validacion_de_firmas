@@ -39,10 +39,18 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"nombre": "Oscar", "correo": "oscar@firma.com", "contrasena": "clave123", "tipo_usuario": "admin"}'
 
-          echo "Login con el usuario..."
-          curl -X POST "http://127.0.0.1:8000/login" \
+          echo "Login con el usuario"
+          LOGIN_RESPONSE=$(curl -X POST "http://127.0.0.1:8000/login" \
             -H "Content-Type: application/json" \
-            -d '{"correo": "oscar@firma.com", "contrasena": "clave123"}' 
+            -d '{"correo": "oscar@firma.com", "contrasena": "clave123"}')
+
+          if echo "$LOGIN_RESPONSE" | grep -q '"access_token"'; then
+            echo "Usuario logeado correctamente"
+          else
+            echo "Error al iniciar sesión"
+            exit 1 
+          fi
+
 
 
       - name: Pruebas terminadas
