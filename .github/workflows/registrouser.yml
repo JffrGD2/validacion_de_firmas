@@ -5,6 +5,7 @@ on:
     branches: [API]
   pull_request:
     branches: [API]
+  workflow_dispatch:
 
 jobs:
   test-api:
