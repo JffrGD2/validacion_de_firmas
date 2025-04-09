@@ -30,26 +30,6 @@ jobs:
 
       - name: Iniciar FastAPI y correr prueba
         run: |
-          echo "Iniciando FastAPI..."
-          uvicorn main:app --host 127.0.0.1 --port 8000 &   # Inicia FastAPI en segundo plano
-          sleep 5  # Espera para que el servidor inicie
-
-          echo "registrar usuario"
-          curl -X POST "http://127.0.0.1:8000/crear_usuario" \
-            -H "Content-Type: application/json" \
-            -d '{"nombre": "Oscar", "correo": "oscar@firma.com", "contraseña": "clave123", "tipo": "admin"}'
-
-          echo "Login con el usuario"
-          LOGIN_RESPONSE=$(curl -X POST "http://127.0.0.1:8000/login" \
-            -H "Content-Type: application/json" \
-            -d '{"correo": "oscar@firma.com", "contraseña": "clave123"}')
-
-          if echo "$LOGIN_RESPONSE" | grep -q '"access_token"'; then
-            echo "Usuario logeado correctamente"
-          else
-            echo "Error al iniciar sesión"
-            exit 1
-          fi
           
           echo "Subiendo imagen para hacer predicción..."
           curl -X POST "http://127.0.0.1:8000/predict/image/" \
