@@ -28,15 +28,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install fastapi uvicorn requests
 
-      - name: Correr FastAPI en segundo plano
+      - name: Iniciar FastAPI y correr prueba
         run: |
-          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          echo "🚀 Iniciando FastAPI..."
+          uvicorn main:app --host 127.0.0.1 --port 8000 &
           sleep 5
 
-      - name: Prueba de registro de usuario
-        run: |
-          echo "➡️ Crear usuario"
-          curl -X POST "http://localhost:8000/crear_usuario" \
+          echo "➡registrar usuario"
+          curl -X POST "http://127.0.0.1:8000/crear_usuario" \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Oscar", "correo": "oscar@firma.com", "contrasena": "clave123", "tipo_usuario": "admin"}'
 
