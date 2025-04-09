@@ -31,22 +31,22 @@ jobs:
       - name: Iniciar FastAPI y correr prueba
         run: |
           echo "🚀 Iniciando FastAPI..."
-          uvicorn main:app --host 127.0.0.1 --port 8000 &
-          sleep 5
+          uvicorn main:app --host 127.0.0.1 --port 8000 &   # Inicia FastAPI en segundo plano
+          sleep 5  # Espera para que el servidor inicie
 
           echo "registrar usuario"
-          curl -X POST "http://127.0.0.1:8000/crear_usuario?nombre=Oscar&correo=oscar@firma.com&contraseña=clave123&tipo=admin"
-          -H "Content-Type: application/json"
+          curl -X POST "http://127.0.0.1:8000/crear_usuario?nombre=Oscar&correo=oscar@firma.com&contraseña=clave123&tipo=admin" \
+            -H "Content-Type: application/json"  # El -H debe estar al final de la línea
 
           echo "Login con el usuario"
-          LOGIN_RESPONSE=$(curl -X POST "http://127.0.0.1:8000/login?correo=oscar@firma.com&contraseña=clave123" /
-          -H "Content-Type: application/json")
+          LOGIN_RESPONSE=$(curl -X POST "http://127.0.0.1:8000/login?correo=oscar@firma.com&contraseña=clave123" \
+            -H "Content-Type: application/json")  # Correcto: -H debe estar bien ubicado
 
           if echo "$LOGIN_RESPONSE" | grep -q '"access_token"'; then
             echo "Usuario logeado correctamente"
           else
             echo "Error al iniciar sesión"
-            exit 1 
+            exit 1
           fi
           
           echo "Subiendo imagen para hacer predicción..."
