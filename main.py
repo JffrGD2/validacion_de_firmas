@@ -69,7 +69,7 @@ supabase = create_client(supabase_url, supabase_key)
 
 # Crear usuario
 @app.post("/crear_usuario")
-def crear_usuario(nombre: str, correo: str, contraseña: str, fechareg: datetime, tipo: str):
+def crear_usuario(nombre: str, correo: str, contraseña: str, tipo: str):
     try:
         fechareg = datetime.now()
         con = conexion()
