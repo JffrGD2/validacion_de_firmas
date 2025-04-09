@@ -50,8 +50,12 @@ jobs:
             echo "Error al iniciar sesión"
             exit 1 
           fi
-
-
+          
+          echo "Subiendo imagen para hacer predicción..."
+          curl -X POST "http://127.0.0.1:8000/predict/image/" \
+            -H "accept: application/json" \
+            -H "Content-Type: multipart/form-data" \
+            -F "archivo=@prueba.png"  
 
       - name: Pruebas terminadas
         run: echo "Usuario creado correctamente"
