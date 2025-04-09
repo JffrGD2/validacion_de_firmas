@@ -34,10 +34,16 @@ jobs:
           uvicorn main:app --host 127.0.0.1 --port 8000 &
           sleep 5
 
-          echo "➡registrar usuario"
+          echo "registrar usuario"
           curl -X POST "http://127.0.0.1:8000/crear_usuario" \
             -H "Content-Type: application/json" \
             -d '{"nombre": "Oscar", "correo": "oscar@firma.com", "contrasena": "clave123", "tipo_usuario": "admin"}'
+
+          echo "Login con el usuario..."
+          curl -X POST "http://127.0.0.1:8000/login" \
+            -H "Content-Type: application/json" \
+            -d '{"correo": "oscar@firma.com", "contrasena": "clave123"}' 
+
 
       - name: Pruebas terminadas
         run: echo "Usuario creado correctamente"
